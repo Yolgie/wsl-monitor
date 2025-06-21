@@ -103,9 +103,20 @@ See the [tasks.md](docs/tasks.md) file for a detailed list of planned improvemen
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Continuous Integration
+
+This project uses GitHub Actions for continuous integration. The workflow automatically builds the project and runs all tests on every push to the main branch and on every pull request.
+
+The CI workflow helps ensure that:
+- The code builds successfully
+- All tests pass
+- New contributions don't break existing functionality
+
+You can see the current build status in the GitHub repository.
+
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a Pull Request. All pull requests will be automatically tested by our CI workflow to ensure they don't break existing functionality.
 
 ## Disclaimer
 
