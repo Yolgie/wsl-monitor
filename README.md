@@ -20,18 +20,10 @@ A small Windows application that monitors updates in WSL2 Debian/Ubuntu distribu
 
 ### Configuring Passwordless Sudo in WSL
 
-The application uses sudo to run apt commands without requiring a password prompt. To configure passwordless sudo:
-
-1. Open your WSL distribution (e.g., Debian or Ubuntu)
-2. Edit the sudoers file:
+The application uses sudo to run apt commands without requiring a password prompt. To configure passwordless sudo add this to your sudoers file in your WSL distro:
    ```
-   sudo visudo
+   yourusername ALL=(ALL) NOPASSWD: /usr/bin/apt update, /usr/bin/apt list --upgradable
    ```
-3. Add the following line at the end of the file (replace `yourusername` with your actual WSL username):
-   ```
-   yourusername ALL=(ALL) NOPASSWD: /usr/bin/apt
-   ```
-4. Save and exit (in nano: Ctrl+O, Enter, Ctrl+X)
 
 ## Building the Application
 
@@ -114,3 +106,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Disclaimer
+
+This project was mostly created with AI-assisted coding using Junie, Jetbrains AI and ChatGPT. The AI tools were used to help with code generation, problem-solving, commit messages, and documentation.
