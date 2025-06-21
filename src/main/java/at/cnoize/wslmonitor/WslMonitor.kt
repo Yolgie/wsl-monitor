@@ -22,9 +22,6 @@ class WslMonitor(
     private val distribution: String? = null
 ) {
 
-    /**
-     * Checks for updates in WSL2 and writes the results to the output file.
-     */
     fun checkForUpdates() {
         try {
             // First update the package list
@@ -65,17 +62,11 @@ class WslMonitor(
             commandList.add(distribution)
         }
 
-        // Add common arguments
         commandList.addAll(listOf("-e", "sudo", "-n"))
+        commandList.addAll(command.split("\\s+".toRegex()).filterNot { it.isBlank() })
 
-        // Split the command string into separate arguments and add them
-        val commandArgs = command.split("\\s+".toRegex()).filterNot { it.isBlank() }
-        commandList.addAll(commandArgs)
-
-        // Create the process builder with all arguments
         val processBuilder = ProcessBuilder(commandList)
 
-        // Log the full command being executed
         println("Executing: ${commandList.joinToString(" ")}")
 
         processBuilder.redirectErrorStream(true)
@@ -126,8 +117,6 @@ class WslMonitor(
      * @return The number of upgradable packages
      */
     private fun countUpgradablePackages(output: String): Int {
-        // Split the output by lines and count lines that contain package information
-        // The first line is usually a header
         return output
             .split("\n")
             .count { it.isNotEmpty() && it.contains("/") && it.contains("[upgradable from") }
@@ -158,7 +147,6 @@ class WslMonitor(
             writer.write("Upgradable packages: $upgradableCount\n\n")
             if (upgradableCount > 0) {
                 writer.write("Details:\n")
-                // Use the Kotlin utility class to format the package list
                 val formattedOutput = formatPackageList(fullOutput)
                 writer.write(formattedOutput)
             } else {
@@ -174,14 +162,12 @@ class WslMonitor(
 
         @JvmStatic
         fun main(args: Array<String>) {
-            // Use the first command-line argument as the distribution name, or use default WSL distribution
             val distribution = args.firstOrNull()
             val monitor = WslMonitor(distribution)
 
             println("Starting WSL Monitor for distribution: ${distribution ?: "default"}")
             println("Results will be written to: $OUTPUT_FILE")
 
-            // Run once
             monitor.checkForUpdates()
         }
     }
