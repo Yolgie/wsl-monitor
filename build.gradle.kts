@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("application")
+    kotlin("jvm") version "2.1.21"
 }
 
 group = "at.cnoize"
@@ -15,6 +16,7 @@ application {
 }
 
 dependencies {
+    implementation(kotlin("stdlib"))
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
@@ -27,4 +29,14 @@ tasks.jar {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+kotlin {
+    jvmToolchain(21)
 }
