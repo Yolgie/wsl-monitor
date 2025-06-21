@@ -195,6 +195,12 @@ public class WslMonitor {
     private void writeResults(int upgradableCount, String fullOutput) throws IOException {
         Path outputPath = Paths.get(OUTPUT_FILE);
 
+        // Ensure parent directory exists
+        Path parent = outputPath.getParent();
+        if (parent != null && !Files.exists(parent)) {
+            Files.createDirectories(parent);
+        }
+
         try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
             LocalDateTime now = LocalDateTime.now();
             writer.write("WSL Update Check - " + now.format(FORMATTER) + "\n");
