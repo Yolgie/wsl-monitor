@@ -1,6 +1,6 @@
 package at.cnoize.wslmonitor
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -59,20 +59,26 @@ internal class WslMonitorTest {
 
     @Test
     fun `should execute apt update command`() {
-        assertTrue(consoleOutput.contains("Executing: wsl -e sudo -n apt update"),
-            "Console output should contain apt update command")
+        Assertions.assertTrue(
+            consoleOutput.contains("Executing: wsl -e sudo -n apt update"),
+            "Console output should contain apt update command"
+        )
     }
 
     @Test
     fun `should execute apt list upgradable command`() {
-        assertTrue(consoleOutput.contains("Executing: wsl -e sudo -n apt list --upgradable"),
-            "Console output should contain apt list upgradable command")
+        Assertions.assertTrue(
+            consoleOutput.contains("Executing: wsl -e sudo -n apt list --upgradable"),
+            "Console output should contain apt list upgradable command"
+        )
     }
 
     @Test
     fun `should display completion message`() {
-        assertTrue(consoleOutput.contains("WSL update check completed."),
-            "Console output should contain completion message")
+        Assertions.assertTrue(
+            consoleOutput.contains("WSL update check completed."),
+            "Console output should contain completion message"
+        )
     }
 
     @Test
@@ -80,19 +86,25 @@ internal class WslMonitorTest {
         println("[DEBUG_LOG] Output file path: ${outputFile.toAbsolutePath()}")
         println("[DEBUG_LOG] Output file content: $fileContent")
 
-        assertTrue(Files.exists(outputFile), 
-            "Output file should exist")
+        Assertions.assertTrue(
+            Files.exists(outputFile),
+            "Output file should exist"
+        )
     }
 
     @Test
     fun `should include WSL Update Check header in output file`() {
-        assertTrue(fileContent.contains("WSL Update Check"), 
-            "Output file should contain 'WSL Update Check'")
+        Assertions.assertTrue(
+            fileContent.contains("WSL Update Check"),
+            "Output file should contain 'WSL Update Check'"
+        )
     }
 
     @Test
     fun `should include today's date in output file`() {
-        assertTrue(fileContent.contains(todayDate),
-            "Output file should contain today's date in ISO format: $todayDate")
+        Assertions.assertTrue(
+            fileContent.contains(todayDate),
+            "Output file should contain today's date in ISO format: $todayDate"
+        )
     }
 }

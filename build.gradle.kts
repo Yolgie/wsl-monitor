@@ -1,7 +1,6 @@
 plugins {
-    id("java")
-    id("application")
     kotlin("jvm") version "2.1.21"
+    id("application")
 }
 
 group = "at.cnoize"
@@ -29,12 +28,6 @@ tasks.jar {
 
 tasks.test {
     useJUnitPlatform()
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
 }
 
 kotlin {

@@ -1,6 +1,5 @@
 package at.cnoize.wslmonitor
 
-import at.cnoize.wslmonitor.WslUtils.formatPackageList
 import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
@@ -147,7 +146,7 @@ class WslMonitor(
             writer.write("Upgradable packages: $upgradableCount\n\n")
             if (upgradableCount > 0) {
                 writer.write("Details:\n")
-                val formattedOutput = formatPackageList(fullOutput)
+                val formattedOutput = WslUtils.formatPackageList(fullOutput)
                 writer.write(formattedOutput)
             } else {
                 writer.write("Your system is up to date.\n")

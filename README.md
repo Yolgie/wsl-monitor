@@ -14,7 +14,7 @@ A small Windows application that monitors updates in WSL2 Debian/Ubuntu distribu
 
 - Windows 10/11 with WSL2 installed
 - Debian or Ubuntu distribution installed in WSL2
-- Java 11 or higher
+- JVM 11 or higher (for running Kotlin applications)
 - Gradle (optional, wrapper included)
 - Passwordless sudo configured in your WSL distribution (see below)
 
@@ -48,6 +48,12 @@ This will create a JAR file in the `build/libs` directory.
 You can run the application directly using:
 
 ```
+kotlin -classpath build/libs/wsl-monitor-1.0-SNAPSHOT.jar at.cnoize.wslmonitor.WslMonitorKt [distribution-name]
+```
+
+Or using the JVM directly:
+
+```
 java -jar build/libs/wsl-monitor-1.0-SNAPSHOT.jar [distribution-name]
 ```
 
@@ -56,13 +62,13 @@ Where `[distribution-name]` is optional and specifies the name of your WSL distr
 Examples:
 ```
 # Use default WSL distribution
-java -jar build/libs/wsl-monitor-1.0-SNAPSHOT.jar
+kotlin -classpath build/libs/wsl-monitor-1.0-SNAPSHOT.jar at.cnoize.wslmonitor.WslMonitorKt
 
 # Specify Ubuntu distribution
-java -jar build/libs/wsl-monitor-1.0-SNAPSHOT.jar Ubuntu
+kotlin -classpath build/libs/wsl-monitor-1.0-SNAPSHOT.jar at.cnoize.wslmonitor.WslMonitorKt Ubuntu
 
 # Specify Ubuntu-20.04 distribution
-java -jar build/libs/wsl-monitor-1.0-SNAPSHOT.jar Ubuntu-20.04
+kotlin -classpath build/libs/wsl-monitor-1.0-SNAPSHOT.jar at.cnoize.wslmonitor.WslMonitorKt Ubuntu-20.04
 ```
 
 When run, the application will execute once and then exit. Use Windows Task Scheduler to run it periodically.
@@ -83,10 +89,16 @@ The application writes its output to a file named `.wsl-monitor` in your Windows
 3. Name it "WSL Update Monitor" (or any name you prefer)
 4. Set the trigger (e.g., Daily)
 5. For the action, select "Start a program"
-6. Browse to the location of your Java executable (e.g., `C:\Program Files\Java\jre\bin\java.exe`)
-7. Add arguments: `-jar "C:\path\to\wsl-monitor-1.0-SNAPSHOT.jar" [distribution-name]`
+6. Browse to the location of your Kotlin executable (e.g., `C:\Program Files\kotlin\bin\kotlin.bat`)
+7. Add arguments: `-classpath "C:\path\to\wsl-monitor-1.0-SNAPSHOT.jar" at.cnoize.wslmonitor.WslMonitorKt [distribution-name]`
    - Replace `[distribution-name]` with your WSL distribution name (e.g., `Ubuntu`) or omit it to use the default WSL distribution
 8. Finish the wizard
+
+Alternatively, if you prefer using the JVM directly:
+1. Follow steps 1-5 above
+2. Browse to the location of your Java executable (e.g., `C:\Program Files\Java\bin\java.exe`)
+3. Add arguments: `-jar "C:\path\to\wsl-monitor-1.0-SNAPSHOT.jar" [distribution-name]`
+4. Finish the wizard
 
 
 ## Customization
@@ -94,4 +106,4 @@ The application writes its output to a file named `.wsl-monitor` in your Windows
 To modify the application:
 
 - Specify your WSL distribution name as a command-line argument (as shown in the "Running the Application" section)
-- Modify the output file location by changing the `OUTPUT_FILE` constant in `WslMonitor.java`
+- Modify the output file location by changing the `OUTPUT_FILE` constant in `WslMonitor.kt`
