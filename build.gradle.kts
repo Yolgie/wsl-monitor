@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.1.21"
-    id("application")
+    kotlin("jvm") version "2.2.0"
+    application
 }
 
 group = "at.cnoize"
@@ -11,7 +11,7 @@ repositories {
 }
 
 application {
-    mainClass.set("at.cnoize.wslmonitor.WslMonitor")
+    mainClass.set("at.cnoize.wslmonitor.WslMonitorKt")
 }
 
 dependencies {

@@ -9,165 +9,147 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+private const val OUTPUT_FILE_NAME = ".wsl-monitor"
+private val OUTPUT_FILE = "${System.getProperty("user.home")}${File.separator}$OUTPUT_FILE_NAME"
+private val FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
 /**
- * WslMonitor - A small application that checks for updates in WSL2 Debian/Ubuntu
- * and writes the results to a file. It can work with a specific WSL distribution
- * or use the default WSL distribution if none is specified.
+ * Main entry point for the application.
+ * Executes WSL commands to check for updates and writes the results to a file.
  */
-class WslMonitor(
-    /**
-     * The name of the WSL distribution to monitor, or null/empty to use the default WSL distribution
-     */
-    private val distribution: String? = null
-) {
+fun main() {
+    println("Starting WSL Monitor")
+    println("Results will be written to: ${OUTPUT_FILE}")
 
-    fun checkForUpdates() {
-        try {
-            // First update the package list
-            executeWslCommand("apt update")
-
-            // Then check for upgradable packages
-            val upgradeOutput = executeWslCommand("apt list --upgradable")
-
-            // Parse the output to count upgradable packages
-            val upgradableCount = countUpgradablePackages(upgradeOutput)
-
-            // Write the results to the output file
-            writeResults(upgradableCount, upgradeOutput)
-
-            println("WSL update check completed. Found $upgradableCount upgradable packages.")
-        } catch (e: IOException) {
-            System.err.println("Error checking for updates: ${e.message}")
-            e.printStackTrace()
-        }
+    try {
+        executeWslCommand("apt update")
+        val upgradeOutput = executeWslCommand("apt list --upgradable")
+        val upgradablePackages = extractUpgradablePackages(upgradeOutput)
+        writeResults(upgradablePackages)
+        println("WSL update check completed. Found ${upgradablePackages.size} upgradable packages.")
+    } catch (e: IOException) {
+        System.err.println("Error checking for updates: ${e.message}")
+        e.printStackTrace()
     }
+}
 
-    /**
-     * Executes a command in WSL and returns the output.
-     *
-     * @param command The command to execute
-     * @return The command output
-     * @throws IOException If an I/O error occurs
-     */
-    @Throws(IOException::class)
-    private fun executeWslCommand(command: String): String {
-        // Use sudo with -n flag to prevent password prompt
-        // If this fails, the user will need to configure passwordless sudo in WSL
+/**
+ * Executes a command in WSL and returns the output.
+ * Uses ProcessBuilder to run the command in WSL with sudo privileges.
+ *
+ * @param command The command to execute
+ * @return The command output as a string
+ */
+private fun executeWslCommand(command: String): String {
+    val commandList = mutableListOf("wsl", "-e", "sudo", "-n")
+    commandList.addAll(command.split("\\s+".toRegex()).filterNot { it.isBlank() })
+    println("Executing: ${commandList.joinToString(" ")}")
+    val processBuilder = ProcessBuilder(commandList)
+    processBuilder.redirectErrorStream(true)
+    val process = processBuilder.start()
+    val output = captureProcessOutput(process)
+    try {
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            System.err.println("Warning: Command '$command' exited with code $exitCode")
+            System.err.println("Output: $output")
+            when {
+                output.contains("sudo: a password is required") -> {
+                    throw IOException("Passwordless sudo is not configured. Please follow the instructions in the README.")
+                }
 
-        val commandList = mutableListOf("wsl")
-
-        if (!distribution.isNullOrBlank()) {
-            commandList.add("-d")
-            commandList.add(distribution)
-        }
-
-        commandList.addAll(listOf("-e", "sudo", "-n"))
-        commandList.addAll(command.split("\\s+".toRegex()).filterNot { it.isBlank() })
-
-        val processBuilder = ProcessBuilder(commandList)
-
-        println("Executing: ${commandList.joinToString(" ")}")
-
-        processBuilder.redirectErrorStream(true)
-        val process = processBuilder.start()
-
-        val output = StringBuilder()
-        BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                output.append(line).append("\n")
-            }
-        }
-
-        try {
-            val exitCode = process.waitFor()
-            if (exitCode != 0) {
-                val outputStr = output.toString()
-                System.err.println("Warning: Command '$command' exited with code $exitCode")
-                System.err.println("Output: $outputStr")
-
-                // Check for common issues
-                when {
-                    outputStr.contains("sudo: a password is required") -> {
-                        throw IOException("Passwordless sudo is not configured. Please follow the instructions in the README.")
-                    }
-
-                    outputStr.contains("WSL distribution name not found") -> {
-                        if (distribution.isNullOrBlank()) {
-                            throw IOException("Default WSL distribution not found. Please make sure WSL is properly installed.")
-                        } else {
-                            throw IOException("WSL distribution '$distribution' not found. Please check the distribution name.")
-                        }
-                    }
+                output.contains("WSL distribution name not found") -> {
+                    throw IOException("WSL not found. Please make sure WSL is properly installed.")
                 }
             }
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            throw IOException("Command execution was interrupted", e)
         }
-
-        return output.toString()
+    } catch (e: InterruptedException) {
+        Thread.currentThread().interrupt()
+        throw IOException("Command execution was interrupted", e)
     }
+    return output
+}
 
-    /**
-     * Counts the number of upgradable packages from the apt list output.
-     *
-     * @param output The output from apt list --upgradable
-     * @return The number of upgradable packages
-     */
-    private fun countUpgradablePackages(output: String): Int {
-        return output
-            .split("\n")
-            .count { it.isNotEmpty() && it.contains("/") && it.contains("[upgradable from") }
-    }
-
-    /**
-     * Writes the update check results to the output file.
-     *
-     * @param upgradableCount The number of upgradable packages
-     * @param fullOutput The full output from apt list --upgradable
-     * @throws IOException If an I/O error occurs
-     */
-    @Throws(IOException::class)
-    private fun writeResults(upgradableCount: Int, fullOutput: String) {
-        val outputPath = Paths.get(OUTPUT_FILE)
-
-        // Ensure parent directory exists
-        outputPath.parent?.let { parent ->
-            if (!Files.exists(parent)) {
-                Files.createDirectories(parent)
-            }
+/**
+ * Captures the output from a process.
+ *
+ * @param process The process to capture output from
+ * @return The captured output as a string
+ */
+private fun captureProcessOutput(process: Process): String {
+    val output = StringBuilder()
+    BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+        var line: String?
+        while (reader.readLine().also { line = it } != null) {
+            output.append(line).append("\n")
         }
+    }
+    return output.toString()
+}
 
-        Files.newBufferedWriter(outputPath).use { writer ->
-            val now = LocalDateTime.now()
-            writer.write("WSL Update Check - ${now.format(FORMATTER)}\n")
-            writer.write("----------------------------------------\n")
-            writer.write("Upgradable packages: $upgradableCount\n\n")
-            if (upgradableCount > 0) {
-                writer.write("Details:\n")
-                val formattedOutput = WslUtils.formatPackageList(fullOutput)
-                writer.write(formattedOutput)
-            } else {
-                writer.write("Your system is up to date.\n")
-            }
+/**
+ * Writes the update check results to the output file.
+ * Creates the output file if it doesn't exist and writes a formatted report
+ * containing the number of upgradable packages and their details.
+ *
+ * @param upgradablePackages List of pairs containing package names and their version information
+ */
+private fun writeResults(upgradablePackages: List<Pair<String, String>>) {
+    val outputPath = Paths.get(OUTPUT_FILE)
+    val upgradableCount = upgradablePackages.size
+
+    outputPath.parent?.let { parent ->
+        if (!Files.exists(parent)) {
+            Files.createDirectories(parent)
         }
     }
 
-    companion object {
-        private const val OUTPUT_FILE_NAME = ".wsl-monitor"
-        private val OUTPUT_FILE = "${System.getProperty("user.home")}${File.separator}$OUTPUT_FILE_NAME"
-        private val FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    Files.newBufferedWriter(outputPath).use { writer ->
+        val now = LocalDateTime.now()
+        writer.write("WSL Update Check - ${now.format(FORMATTER)}\n")
+        writer.write("----------------------------------------\n")
+        writer.write("Upgradable packages: $upgradableCount\n\n")
+        if (upgradableCount > 0) {
+            writer.write("Details:\n")
+            writer.write(formatPackageList(upgradablePackages))
+        } else {
+            writer.write("Your system is up to date.\n")
+        }
+    }
+}
 
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val distribution = args.firstOrNull()
-            val monitor = WslMonitor(distribution)
+/**
+ * Extracts upgradable packages from apt output.
+ * Parses the output of 'apt list --upgradable' command to identify packages
+ * that can be upgraded and their version information.
+ *
+ * @param packageList The raw package list from apt list --upgradable command
+ * @return A list of pairs where each pair contains a package name and its version information
+ */
+fun extractUpgradablePackages(packageList: String): List<Pair<String, String>> {
+    return packageList.split("\n")
+        .filter { it.contains("/") && it.contains("[upgradable from") }
+        .map { line ->
+            val packageName = line.split("/")[0].trim()
+            val versionInfo = line.substringAfter("[upgradable from").substringBefore("]").trim()
+            packageName to versionInfo
+        }
+}
 
-            println("Starting WSL Monitor for distribution: ${distribution ?: "default"}")
-            println("Results will be written to: $OUTPUT_FILE")
-
-            monitor.checkForUpdates()
+/**
+ * Formats a package list for better readability.
+ * Converts the list of package pairs into a human-readable string format
+ * with bullet points for each package.
+ *
+ * @param upgradablePackages List of pairs containing package names and their version information
+ * @return A formatted string with package information, one package per line with bullet points
+ */
+fun formatPackageList(upgradablePackages: List<Pair<String, String>>): String {
+    return if (upgradablePackages.isEmpty()) {
+        "No packages found."
+    } else {
+        upgradablePackages.joinToString("\n") { (name, version) ->
+            "• $name: $version"
         }
     }
 }

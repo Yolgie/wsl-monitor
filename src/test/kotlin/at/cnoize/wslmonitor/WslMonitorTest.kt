@@ -23,6 +23,13 @@ internal class WslMonitorTest {
     private lateinit var fileContent: String
     private lateinit var todayDate: String
 
+    /**
+     * Captures the standard output during the execution of the provided code block.
+     * This is a utility function for testing console output.
+     *
+     * @param block The code block to execute while capturing standard output
+     * @return The captured standard output as a string
+     */
     private fun captureSystemOut(block: () -> Unit): String {
         val originalOut = System.out
         val outContent = ByteArrayOutputStream()
@@ -47,7 +54,7 @@ internal class WslMonitorTest {
         System.setProperty("user.home", tempDir.toString())
 
         consoleOutput = captureSystemOut {
-            WslMonitor.main(emptyArray())
+            main()
         }
 
         outputFile = tempDir.resolve(".wsl-monitor")
