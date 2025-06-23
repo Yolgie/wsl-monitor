@@ -9,6 +9,8 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+typealias UpgradablePackage = Pair<String, String>
+
 private const val OUTPUT_FILE_NAME = ".wsl-monitor"
 private val OUTPUT_FILE = "${System.getProperty("user.home")}${File.separator}$OUTPUT_FILE_NAME"
 private val FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -92,9 +94,9 @@ private fun captureProcessOutput(process: Process): String {
  * Creates the output file if it doesn't exist and writes a formatted report
  * containing the number of upgradable packages and their details.
  *
- * @param upgradablePackages List of pairs containing package names and their version information
+ * @param upgradablePackages List of upgradable packages with their version information
  */
-private fun writeResults(upgradablePackages: List<Pair<String, String>>) {
+private fun writeResults(upgradablePackages: List<UpgradablePackage>) {
     val outputPath = Paths.get(OUTPUT_FILE)
     val upgradableCount = upgradablePackages.size
 
@@ -124,9 +126,9 @@ private fun writeResults(upgradablePackages: List<Pair<String, String>>) {
  * that can be upgraded and their version information.
  *
  * @param packageList The raw package list from apt list --upgradable command
- * @return A list of pairs where each pair contains a package name and its version information
+ * @return A list of upgradable packages with their version information
  */
-fun extractUpgradablePackages(packageList: String): List<Pair<String, String>> {
+fun extractUpgradablePackages(packageList: String): List<UpgradablePackage> {
     return packageList.split("\n")
         .filter { it.contains("/") && it.contains("[upgradable from") }
         .map { line ->
@@ -138,13 +140,13 @@ fun extractUpgradablePackages(packageList: String): List<Pair<String, String>> {
 
 /**
  * Formats a package list for better readability.
- * Converts the list of package pairs into a human-readable string format
+ * Converts the list of upgradable packages into a human-readable string format
  * with bullet points for each package.
  *
- * @param upgradablePackages List of pairs containing package names and their version information
+ * @param upgradablePackages List of upgradable packages with their version information
  * @return A formatted string with package information, one package per line with bullet points
  */
-fun formatPackageList(upgradablePackages: List<Pair<String, String>>): String {
+fun formatPackageList(upgradablePackages: List<UpgradablePackage>): String {
     return if (upgradablePackages.isEmpty()) {
         "No packages found."
     } else {
